@@ -18,7 +18,7 @@ UNDERLINE = '\033[4m'
 BOLD = '\033[1m'
 UNBOLD = '\033[0m'
 
-# Disables bold and underlines strings
+# Disables bold and underline strings
 if sys.platform == "win32":
     END = ''
     UNDERLINE = ''
@@ -26,9 +26,12 @@ if sys.platform == "win32":
     UNBOLD = ''
 
 # sets now as a string as it will be added to the backup directory name
-not_ready = False
 now = str(datetime.now()).replace(' ','_').replace('.', '_').replace(':', '-')
 
+# GDFS checks
+gdfs_signedin = False
+gdfs_installed = False
+gdfs_running = False
 
 # checks operating system and returns the name of the OS, filepath of GDFS, and GDFS executable name.
 def checkOS():
@@ -61,7 +64,7 @@ def checkOS():
     elif platform == 'darwin':
         gdfs_drive_path = join(os.path.abspath(os.sep), 'Volumes', 'GoogleDrive', 'My Drive')
         backup_path = join(f'{gdfs_drive_path}', backup_folder)
-        app_cache = join(username, 'Library/Application\ Support/Google/DriveFS')
+        app_cache = join(username, 'Library/Application Support/Google/DriveFS')
         return {
             'name': 'macOS',
             'gdfs_app_path': '/Applications',
@@ -71,7 +74,7 @@ def checkOS():
             'backup_path': backup_path,
             'gdfs_drive_path': gdfs_drive_path,
             'open_gdfs': lambda: subprocess.Popen(["/usr/bin/open", "/Applications/Google Drive.app"]),
-            'clear': os.system('clear'),
+            'clear': lambda: os.system('clear'),
             'restore': '/Applications/EA Basic Backup.app/Contents/Restore.zip',
             'app_cache': app_cache
         }
@@ -83,23 +86,21 @@ def winAppPathFinder(app_path, app_process_name):
     for dirpath, dirnames, filenames in os.walk(app_path):
         for filename in filenames:
             if app_process_name in filename:
-                gdfs_paths.append(join(dirpath, filename))
+                gdfs_paths.append(os.path.join(dirpath, filename))
 
     return max(gdfs_paths)
 
 def option():
-    # tells gui that backup is not ready
-    global not_ready
-    not_ready = True
-
     option = input(f"Press 'c' to {BOLD}continue{UNBOLD} or press any other key to {BOLD}cancel{UNBOLD}: ")
     if option.lower() == 'c':
-        backup()
+        print('Retrying backup...')
+        sleep(5)
     else:
         sys.exit("User cancelled")
 
 # checks if GDFS is installed
-def isProgramInstalled(os_ver, app_path, app_process_name):
+def isProgramInstalled(os_ver, app_path, app_process_name, clear_terminal):
+    clear_terminal()
     filexist = False
     if os_ver.lower() == 'windows':
         gdfs = []
@@ -119,11 +120,14 @@ def isProgramInstalled(os_ver, app_path, app_process_name):
         3. Sign in to Google Drive File Stream with your email and password
         4. Enter 'c' below and press Enter 
         ''')
-
         option()
+    else:
+        global gdfs_installed
+        gdfs_installed = True
 
 # checks if GDFS is running
-def isProgramRunning(process_name, open_process):
+def isProgramRunning(process_name, open_process, clear_terminal):
+    clear_terminal()
     running = []
     for p in psutil.process_iter():
         try:
@@ -140,13 +144,15 @@ def isProgramRunning(process_name, open_process):
 
         # opens GDFS
         open_process()
-
         option()
+    else:
+        global gdfs_running
+        gdfs_running = True
 
 # checks if GDFS is configured
-def isSignedInToGDFS(app_cache_path):
+def isSignedInToGDFS(app_cache_path, clear_terminal):
+    clear_terminal()
     lst = []
-    print(app_cache_path)
     for dirpath, dirnames, filenames in os.walk(app_cache_path):
         lst.extend(filenames)
     if 'enabled' not in lst:
@@ -157,8 +163,10 @@ def isSignedInToGDFS(app_cache_path):
         1. Sign in to Google Drive File Stream with your email and password
         2. Enter 'c' below and press Enter 
         ''')
-
         option()
+    else:
+        global gdfs_signedin
+        gdfs_signedin = True
 
 # Creates the backup destination folder
 def createBackupFolder(backup_path):
@@ -182,7 +190,8 @@ def getSizeOfPath(start_path = '.'):
     for dirpath, dirnames, filenames in os.walk(start_path):
         filenames = [f for f in filenames if not f[0] == '.']
         for f in filenames:
-            fp = join(dirpath, f)
+            fp = os.path.join(dirpath, f)
+
             # skip if it is symbolic link
             if not os.path.islink(fp):
                 total_size += os.path.getsize(fp)
@@ -214,8 +223,8 @@ def fileCountInPaths(list_of_paths):
 def getSourceAndDestination(user_path, destination_path, *selected_directories):
     paths = []
     for directory in selected_directories:
-        source = join(user_path, directory)
-        destination = join(destination_path, directory)
+        source = os.path.join(user_path, directory)
+        destination = os.path.join(destination_path, directory)
         paths.append((directory, source, destination))
     return paths
 
@@ -237,17 +246,18 @@ def progress(copied_so_far, unit='files'):
 
 # start backup process
 def backup():
-    # checking if GDFS is set up properly
     os_ver = checkOS()
     os_ver.get('clear')
-    isProgramInstalled(os_ver.get('name'), os_ver.get('gdfs_app_path'), os_ver.get('gdfs_process_name'))
-    isProgramRunning(os_ver.get('gdfs_process_name'), os_ver.get('open_gdfs'))
-    isSignedInToGDFS(os_ver.get('app_cache'))
+
+    # checking if GDFS is set up properly
+    while(gdfs_installed == False and gdfs_running == False and gdfs_signedin == False):
+        isProgramInstalled(os_ver.get('name'), os_ver.get('gdfs_app_path'), os_ver.get('gdfs_process_name'), os_ver.get('clear'))
+        isProgramRunning(os_ver.get('gdfs_process_name'), os_ver.get('open_gdfs'), os_ver.get('clear'))
+        isSignedInToGDFS(os_ver.get('app_cache'), os_ver.get('clear'))
+        print(gdfs_installed, gdfs_running, gdfs_signedin)
+
     createBackupFolder(os_ver.get('backup_path'))
 
-    # tells gui that backup is ready
-    global not_ready
-    not_ready = False
 
     user_path = os.path.expanduser('~')
     backup_path = os_ver.get('backup_path')
@@ -285,4 +295,7 @@ def backup():
 Please give Google Drive File Stream time to fully sync newly copied data to the cloud. To verify data backup, please check folder named {UNDERLINE}{os_ver.get('backup_folder')}{END} in https://drive.work.ea.com
 ''')
 
-backup()
+
+
+if __name__ == "__main__":
+    backup()
