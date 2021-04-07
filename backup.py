@@ -33,6 +33,7 @@ now = str(datetime.now()).replace(' ','_').replace('.', '_').replace(':', '-')
 # checks operating system and returns the name of the OS, filepath of GDFS, and GDFS executable name.
 def checkOS():
     backup_folder = f'backup_{now}'
+    username = os.path.expanduser('~')
     if platform == 'win32':
         drive_letter = ''
         try:
@@ -43,6 +44,7 @@ def checkOS():
         backup_path = join(f'{gdfs_drive_path}', backup_folder)
         script_path = dirname(abspath(__file__))
         restore_file_win = f'{join(script_path, "Resources", "Restore.exe")}'
+        app_cache = join(username, 'AppData\Local\Google\DriveFS')
         return {
             'name':'Windows',
             'gdfs_app_path':r'C:\Program Files',
@@ -53,11 +55,13 @@ def checkOS():
             'gdfs_drive_path': gdfs_drive_path,
             'open_gdfs': lambda: subprocess.Popen(winAppPathFinder(r'C:\Program Files', 'GoogleDriveFS.exe')),
             'clear': lambda: os.system('cls'),
-            'restore': restore_file_win
+            'restore': restore_file_win,
+            'app_cache': app_cache
         }
     elif platform == 'darwin':
         gdfs_drive_path = join(os.path.abspath(os.sep), 'Volumes', 'GoogleDrive', 'My Drive')
         backup_path = join(f'{gdfs_drive_path}', backup_folder)
+        app_cache = join(username, 'Library/Application\ Support/Google/DriveFS')
         return {
             'name': 'macOS',
             'gdfs_app_path': '/Applications',
@@ -68,7 +72,8 @@ def checkOS():
             'gdfs_drive_path': gdfs_drive_path,
             'open_gdfs': lambda: subprocess.Popen(["/usr/bin/open", "/Applications/Google Drive.app"]),
             'clear': os.system('clear'),
-            'restore': '/Applications/EA Basic Backup.app/Contents/Restore.zip'
+            'restore': '/Applications/EA Basic Backup.app/Contents/Restore.zip',
+            'app_cache': app_cache
         }
     else: print(f'Sorry! unknown OS {platform}')
 
@@ -139,8 +144,13 @@ def isProgramRunning(process_name, open_process):
         option()
 
 # checks if GDFS is configured
-def isSignedInToGDFS(gdfs_drive_path):
-    if not os.path.exists(gdfs_drive_path):
+def isSignedInToGDFS(app_cache_path):
+    lst = []
+    print(app_cache_path)
+    for dirpath, dirnames, filenames in os.walk(app_cache_path):
+        lst.extend(filenames)
+    if 'enabled' not in lst:
+
         print(f'''
         {BOLD}WARNING!!!{UNBOLD} Google Drive File Stream is running but {BOLD}NOT CONFIGURED{UNBOLD}.
         Please perform the steps below before proceeding...
@@ -232,7 +242,7 @@ def backup():
     os_ver.get('clear')
     isProgramInstalled(os_ver.get('name'), os_ver.get('gdfs_app_path'), os_ver.get('gdfs_process_name'))
     isProgramRunning(os_ver.get('gdfs_process_name'), os_ver.get('open_gdfs'))
-    isSignedInToGDFS(os_ver.get('gdfs_drive_path'))
+    isSignedInToGDFS(os_ver.get('app_cache'))
     createBackupFolder(os_ver.get('backup_path'))
 
     # tells gui that backup is ready
