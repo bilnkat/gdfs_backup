@@ -94,7 +94,6 @@ def option():
     option = input(f"Press 'c' to {BOLD}continue{UNBOLD} or press any other key to {BOLD}cancel{UNBOLD}: ")
     if option.lower() == 'c':
         print('Retrying backup...')
-        sleep(5)
     else:
         sys.exit("User cancelled")
 
@@ -250,12 +249,16 @@ def backup():
     os_ver.get('clear')
 
     # checking if GDFS is set up properly
-    while(gdfs_installed == False and gdfs_running == False and gdfs_signedin == False):
+    while(gdfs_installed == False or gdfs_running == False or gdfs_signedin == False):
         isProgramInstalled(os_ver.get('name'), os_ver.get('gdfs_app_path'), os_ver.get('gdfs_process_name'), os_ver.get('clear'))
         isProgramRunning(os_ver.get('gdfs_process_name'), os_ver.get('open_gdfs'), os_ver.get('clear'))
         isSignedInToGDFS(os_ver.get('app_cache'), os_ver.get('clear'))
-        print(gdfs_installed, gdfs_running, gdfs_signedin)
 
+    # checking if GDFS mount path is ready
+    while not os.path.exists(os_ver.get('gdfs_drive_path')):
+        sleep(2)
+
+    # creates backup directory
     createBackupFolder(os_ver.get('backup_path'))
 
 
