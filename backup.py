@@ -3,7 +3,6 @@
 import shutil
 import os
 from datetime import datetime
-from sys import platform
 import threading
 import psutil
 from time import sleep
@@ -35,16 +34,8 @@ gdfs_running = False
 
 # checks operating system and returns the name of the OS, filepath of GDFS, and GDFS executable name.
 def checkOS():
-    backup_folder = f'backup_{now}'
     username = os.path.expanduser('~')
-    if platform == 'win32':
-        drive_letter = ''
-        try:
-            drive_letter = getDriveLetter()
-        except:
-            pass
-        gdfs_drive_path = join(f'{drive_letter}', 'My Drive')
-        backup_path = join(f'{gdfs_drive_path}', backup_folder)
+    if sys.platform == 'win32':
         script_path = dirname(abspath(__file__))
         restore_file_win = f'{join(script_path, "Resources", "Restore.exe")}'
         app_cache = join(username, 'AppData\Local\Google\DriveFS')
@@ -53,32 +44,28 @@ def checkOS():
             'gdfs_app_path':r'C:\Program Files',
             'gdfs_process_name':'GoogleDriveFS.exe',
             'selected_folders': ('Desktop', 'Documents', 'Pictures'),
-            'backup_folder': backup_folder,
-            'backup_path': backup_path,
-            'gdfs_drive_path': gdfs_drive_path,
+            'backup_folder': getBackupPath()[0],
+            'gdfs_drive_path': getGDFSDrivePath(),
             'open_gdfs': lambda: subprocess.Popen(winAppPathFinder(r'C:\Program Files', 'GoogleDriveFS.exe')),
             'clear': lambda: os.system('cls'),
             'restore': restore_file_win,
             'app_cache': app_cache
         }
-    elif platform == 'darwin':
-        gdfs_drive_path = join(os.path.abspath(os.sep), 'Volumes', 'GoogleDrive', 'My Drive')
-        backup_path = join(f'{gdfs_drive_path}', backup_folder)
+    elif sys.platform == 'darwin':
         app_cache = join(username, 'Library/Application Support/Google/DriveFS')
         return {
             'name': 'macOS',
             'gdfs_app_path': '/Applications',
             'gdfs_process_name' : 'Google Drive',
             'selected_folders': ('Desktop', 'Documents', 'Pictures'),
-            'backup_folder': backup_folder,
-            'backup_path': backup_path,
-            'gdfs_drive_path': gdfs_drive_path,
+            'backup_folder': getBackupPath()[0],
+            'gdfs_drive_path': getGDFSDrivePath(),
             'open_gdfs': lambda: subprocess.Popen(["/usr/bin/open", "/Applications/Google Drive.app"]),
             'clear': lambda: os.system('clear'),
             'restore': '/Applications/EA Basic Backup.app/Contents/Restore.zip',
             'app_cache': app_cache
         }
-    else: print(f'Sorry! unknown OS {platform}')
+    else: print(f'Sorry! unknown OS {sys.platform}')
 
 # Finds GDFS file path if it exists
 def winAppPathFinder(app_path, app_process_name):
@@ -89,6 +76,22 @@ def winAppPathFinder(app_path, app_process_name):
                 gdfs_paths.append(os.path.join(dirpath, filename))
 
     return max(gdfs_paths)
+
+def getGDFSDrivePath():
+    if sys.platform == 'win32':
+        drive_letter = ''
+        try:
+            drive_letter = getDriveLetter()
+        except:
+            pass
+        return join(f'{drive_letter}', 'My Drive')
+    elif sys.platform == 'darwin':
+        return join(os.path.abspath(os.sep), 'Volumes', 'GoogleDrive', 'My Drive')
+
+def getBackupPath():
+    backup_folder = f'backup_{now}'
+    backup_path = join(f'{getGDFSDrivePath()}', backup_folder)
+    return (backup_folder, backup_path)
 
 def option():
     option = input(f"Press 'c' to {BOLD}continue{UNBOLD} or press any other key to {BOLD}cancel{UNBOLD}: ")
@@ -255,19 +258,18 @@ def backup():
         isSignedInToGDFS(os_ver.get('app_cache'), os_ver.get('clear'))
 
     # checking if GDFS mount path is ready
-    while not os.path.exists(os_ver.get('gdfs_drive_path')):
+    while not os.path.exists(getGDFSDrivePath()):
         sleep(2)
 
     # creates backup directory
-    createBackupFolder(os_ver.get('backup_path'))
-
+    createBackupFolder(getBackupPath()[1])
 
     user_path = os.path.expanduser('~')
-    backup_path = os_ver.get('backup_path')
+    back_up_path = getBackupPath()[1]
     selected_directories = os_ver.get('selected_folders')
 
     # getting the source and destination path for the selected folders
-    source_dest = getSourceAndDestination(user_path, backup_path, *selected_directories)
+    source_dest = getSourceAndDestination(user_path, back_up_path, *selected_directories)
 
     # if macos, initiate terminal access to user folders (source)
     if os_ver.get('name').lower() == 'macos':
@@ -275,7 +277,7 @@ def backup():
             accessMacOSFolders(each_folder[1])
 
     # copies restore command to backup folder
-    shutil.copy2(os_ver.get('restore'), os_ver.get('backup_path'))
+    shutil.copy2(os_ver.get('restore'), back_up_path)
 
     # goes through each source and destination in the source_dest list
     for each_folder in source_dest:
@@ -294,7 +296,7 @@ def backup():
             progress(files_copied_so_far)
         print(f'\rCopied from {directory}... {fileCountInPath(dest)} files\n\n')
 
-    print(f'''\nTotal of {fileCountInPath(backup_path)} files copied\n
+    print(f'''\nTotal of {fileCountInPath(back_up_path)} files copied\n
 Please give Google Drive File Stream time to fully sync newly copied data to the cloud. To verify data backup, please check folder named {UNDERLINE}{os_ver.get('backup_folder')}{END} in https://drive.work.ea.com
 ''')
 
