@@ -8,7 +8,6 @@ import psutil
 from time import sleep
 import sys
 import subprocess
-from os.path import dirname, abspath, join
 
 # Copies user folders to Google Drive File Stream (GDFS)
 
@@ -32,13 +31,16 @@ gdfs_signedin = False
 gdfs_installed = False
 gdfs_running = False
 
+print("Intitiating backup...")
+
 # checks operating system and returns the name of the OS, filepath of GDFS, and GDFS executable name.
 def checkOS():
     username = os.path.expanduser('~')
     if sys.platform == 'win32':
-        script_path = dirname(abspath(__file__))
-        restore_file_win = f'{join(script_path, "Resources", "Restore.exe")}'
-        app_cache = join(username, 'AppData\Local\Google\DriveFS')
+        script_path = sys.argv[0]
+        script_dir = os.path.split(script_path)[0]
+        restore_file_win = f'{os.path.join(script_dir, "Restore.exe")}'
+        app_cache = os.path.join(username, 'AppData\Local\Google\DriveFS')
         return {
             'name':'Windows',
             'gdfs_app_path':r'C:\Program Files',
@@ -52,7 +54,7 @@ def checkOS():
             'app_cache': app_cache
         }
     elif sys.platform == 'darwin':
-        app_cache = join(username, 'Library/Application Support/Google/DriveFS')
+        app_cache = os.path.join(username, 'Library/Application Support/Google/DriveFS')
         return {
             'name': 'macOS',
             'gdfs_app_path': '/Applications',
@@ -84,13 +86,13 @@ def getGDFSDrivePath():
             drive_letter = getDriveLetter()
         except:
             pass
-        return join(f'{drive_letter}', 'My Drive')
+        return os.path.join(f'{drive_letter}', 'My Drive')
     elif sys.platform == 'darwin':
-        return join(os.path.abspath(os.sep), 'Volumes', 'GoogleDrive', 'My Drive')
+        return os.path.join(os.path.abspath(os.sep), 'Volumes', 'GoogleDrive', 'My Drive')
 
 def getBackupPath():
     backup_folder = f'backup_{now}'
-    backup_path = join(f'{getGDFSDrivePath()}', backup_folder)
+    backup_path = os.path.join(f'{getGDFSDrivePath()}', backup_folder)
     return (backup_folder, backup_path)
 
 def option():
