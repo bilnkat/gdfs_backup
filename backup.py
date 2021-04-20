@@ -32,6 +32,7 @@ gdfs_installed = False
 gdfs_running = False
 
 print("Intitiating backup...")
+sleep(3)
 
 # checks operating system and returns the name of the OS, filepath of GDFS, and GDFS executable name.
 def checkOS():
@@ -99,6 +100,7 @@ def option():
     option = input(f"Press 'c' to {BOLD}continue{UNBOLD} or press any other key to {BOLD}cancel{UNBOLD}: ")
     if option.lower() == 'c':
         print('Retrying backup...')
+        sleep(3)
     else:
         sys.exit("User cancelled")
 
