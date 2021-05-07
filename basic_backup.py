@@ -30,7 +30,7 @@ class Ui_Form(object):
             icon_path = "Resources/BasicBackup-Icon.png"
 
         self.label = QtWidgets.QLabel(Form)
-        self.label.setGeometry(QtCore.QRect(10, 0, 451, 441))
+        self.label.setGeometry(QtCore.QRect(10, 24, 451, 441))
         self.label.setText("")
         self.label.setPixmap(QtGui.QPixmap(icon_path))
         self.label.setScaledContents(True)
