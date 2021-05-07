@@ -26,9 +26,9 @@ class Ui_Form(object):
         # platform checker which will be used for QPixmap path
         icon_path = ''
         if sys.platform == "darwin":
-            icon_path = "/Applications/EA Basic Backup.app/Contents/EA-BasicBackup-Icon.png"
+            icon_path = "/Applications/Basic Backup.app/Contents/BasicBackup-Icon.png"
         elif sys.platform == "win32":
-            icon_path = "Resources/EA-BasicBackup-Icon.png"
+            icon_path = "Resources/BasicBackup-Icon.png"
 
         self.label = QtWidgets.QLabel(Form)
         self.label.setGeometry(QtCore.QRect(10, 0, 451, 441))
@@ -87,7 +87,7 @@ class Ui_Form(object):
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
-        Form.setWindowTitle(_translate("Form", "EA Basic Backup"))
+        Form.setWindowTitle(_translate("Form", "Basic Backup"))
         self.pushButton.setText(_translate("Form", "Run Backup"))
         Form.close()
 
@@ -101,7 +101,7 @@ class Ui_Form(object):
          - Pictures
          '''
         msg = QMessageBox()
-        msg.setWindowTitle("EA Basic Backup")
+        msg.setWindowTitle("Basic Backup")
         msg.setText("Are you sure you want to backup all of your documents to GDrive?")
         msg.setIcon(QMessageBox.Question)
         msg.setStandardButtons(QMessageBox.Ok|QMessageBox.Cancel)
@@ -112,12 +112,12 @@ class Ui_Form(object):
     def proceed(self, i):
         if i.text() == "OK":
             if sys.platform == "darwin":
-                subprocess.Popen(['open', '-a', 'Terminal', '/Applications/EA Basic Backup.app/Contents/backup'])
+                subprocess.Popen(['open', '-a', 'Terminal', '/Applications/Basic Backup.app/Contents/backup'])
             elif sys.platform == "win32":
                 script_path = dirname(abspath(__file__))
                 backup_file = f'"{join(script_path,"Resources", "backup.exe")}"'
                 subprocess.Popen(backup_file)
-            CustomMessageBox.showWithTimeout(5, "Your backup will begin shortly...", "EA Basic Backup")
+            CustomMessageBox.showWithTimeout(5, "Your backup will begin shortly...", "Basic Backup")
             Form.close()
 
 

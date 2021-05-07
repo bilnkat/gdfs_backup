@@ -65,7 +65,7 @@ def checkOS():
             'gdfs_drive_path': getGDFSDrivePath(),
             'open_gdfs': lambda: subprocess.Popen(["/usr/bin/open", "/Applications/Google Drive.app"]),
             'clear': lambda: os.system('clear'),
-            'restore': '/Applications/EA Basic Backup.app/Contents/Restore.zip',
+            'restore': '/Applications/Basic Backup.app/Contents/Restore.zip',
             'app_cache': app_cache
         }
     else: print(f'Sorry! unknown OS {sys.platform}')
