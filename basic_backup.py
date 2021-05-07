@@ -20,9 +20,8 @@ class Ui_Form(object):
         Form.setEnabled(True)
         Form.resize(468, 589)
         Form.setMouseTracking(False)
-        Form.setStyleSheet("#pushButton {\n"
-"    background-color: rgb(73,161,252);\n"
-"}")
+        Form.setStyleSheet("background-color: grey;")
+
         # platform checker which will be used for QPixmap path
         icon_path = ''
         if sys.platform == "darwin":
@@ -89,6 +88,7 @@ class Ui_Form(object):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Basic Backup"))
         self.pushButton.setText(_translate("Form", "Run Backup"))
+        self.pushButton.setStyleSheet("background-color: rgb(68,166,230);")
         Form.close()
 
     # Dev methods here...
