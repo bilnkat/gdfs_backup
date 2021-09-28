@@ -31,7 +31,7 @@ gdfs_signedin = False
 gdfs_installed = False
 gdfs_running = False
 
-print("Intitiating backup...")
+print("Initiating backup...")
 sleep(3)
 
 # checks operating system and returns the name of the OS, filepath of GDFS, and GDFS executable name.
